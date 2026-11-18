@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ZStream trailer</title>
+<meta name="robots" content="noindex">
+<style>html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}#p{position:absolute;inset:0;width:100%;height:100%}</style>
+</head>
+<body>
+<div id="p"></div>
+<script>
+// Plays one YouTube trailer full-size for the ZStream TV app and tells the app when it is playing.
+// Usage: ?v=<youtube id>[&mute=1]
+var q = new URLSearchParams(location.search);
+var id = (q.get('v') || '').replace(/[^A-Za-z0-9_-]/g, '');
+function tell(state) { try { parent.postMessage({ zsTrailer: state, v: id }, '*'); } catch (e) {} }
+var player;
+function onYouTubeIframeAPIReady() {
+  if (!id) return tell('error');
+  player = new YT.Player('p', {
+    videoId: id,
+    playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, disablekb: 1, fs: 0, loop: 1, playlist: id, mute: q.get('mute') === '1' ? 1 : 0 },
+    events: {
+      onReady: function (e) { e.target.playVideo(); },
+      onStateChange: function (e) { if (e.data === 1) tell('playing'); if (e.data === 0) tell('ended'); },
+      onError: function () { tell('error'); }
+    }
+  });
+}
+window.addEventListener('message', function (e) {
+  if (!player || !e.data) return;
+  if (e.data.zsCmd === 'stop') player.stopVideo();
+  if (e.data.zsCmd === 'mute') player.mute();
+  if (e.data.zsCmd === 'unmute') player.unMute();
+});
+</script>
+<script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
