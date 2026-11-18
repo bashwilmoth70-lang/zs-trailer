@@ -25,10 +25,14 @@ function onYouTubeIframeAPIReady() {
     // no loop/playlist: a one-video playlist makes YouTube show skip/pause buttons; loop by hand instead
     playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, disablekb: 1, fs: 0, cc_load_policy: 0, mute: q.get('mute') === '1' ? 1 : 0 },
     events: {
-      onReady: function (e) { e.target.playVideo(); },
+      // autoplay starts it on its own; telling it to play makes YouTube flash its pause symbol,
+      // so only nudge it if autoplay did not start within a few seconds
+      onReady: function (e) {
+        setTimeout(function () { if (e.target.getPlayerState() !== 1) e.target.playVideo(); }, 4000);
+      },
       onStateChange: function (e) {
         if (e.data === 1) tell('playing');
-        if (e.data === 0) { tell('ended'); e.target.seekTo(0, true); e.target.playVideo(); }
+        if (e.data === 0) tell('ended');       // the app fades back to the still picture
       },
       onError: function () { tell('error'); }
     }
